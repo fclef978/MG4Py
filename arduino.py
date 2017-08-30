@@ -4,10 +4,10 @@
 # 2017-08-26
 
 import serial
-import time
+from time import sleep
 
 
-class Aruduino:
+class Arduino:
 
     def __init__(self):
         self.ser = serial.Serial('/dev/ttyACM0', 9600)
@@ -25,15 +25,23 @@ class Aruduino:
             self.ser.write(ser_data[i])
 
     def receive(self):
+        cnt = 0
         ser_data = [0] * 7
-        if self.ser.in_waiting > 7:
-            for i in range(7):
-                ser_data[i] = self.ser.read()
+        # 50ループ(だいたい50ミリ秒)でタイムアウト
+        for i in range(50):
+            if self.ser.in_waiting >= 7:
+                ser_data[0] = self.ser.read()
+                if ser_data[0] >= 0x80:
+                    for i in range(1, 7):
+                        ser_data[i] = self.ser.read()
+                        cmd_data = self.decode(ser_data)
+                        return cmd_data
+            sleep(0.001)
 
-        cmd_data = self.decode(ser_data)
-        return cmd_data
+        return False
 
-    def encode(self, cmd_data):
+    @staticmethod
+    def encode(cmd_data):
         mid_data = [0] * 6
         ser_data = [0] * 7
         for i in range(3):
@@ -61,7 +69,8 @@ class Aruduino:
 
         return ser_data
 
-    def decode(self, ser_data):
+    @staticmethod
+    def decode(ser_data):
         mid_data = [0] * 6
         cmd_data = [0] * 3
 
