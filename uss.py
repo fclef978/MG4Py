@@ -2,6 +2,14 @@ import smbus2
 from time import sleep
 
 
+class UssOpenError(Exception):
+    def __init__(self, addr):
+        self.addr = addr
+
+    def __str__(self):
+        return ('Address {0} is not SRF02'.format(self.addr))
+
+
 class Uss:
 
     LEFT = 0x70
@@ -17,7 +25,7 @@ class Uss:
         self.i2c = smbus2.SMBus(1)
         # ソフトウェアリビジョンの確認
         if not self.i2c.read_byte_data(self.addr, 0) == 0x06:
-            print("failed to open USS in %{0}".format(self.addr))
+            raise UssOpenError(self.addr)
         else:
             print("USS opened in %{0}".format(self.addr))
 
