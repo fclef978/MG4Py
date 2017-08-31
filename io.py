@@ -3,9 +3,9 @@ import time
 
 
 class IO:
-    FRONT = 18;
-    LEFT = 25;
-    RIGHT = 26;
+    FRONT = 18
+    LEFT = 25
+    RIGHT = 26
 
     IN = GPIO.IN
     OUT = GPIO.OUT
@@ -30,7 +30,7 @@ class IO:
             GPIO.output(self.port, state)
             return True
         else:
-            print("Port {0} is not OUTPUT".format(self.addr))
+            print("Port {0} is not OUTPUT".format(self.port))
             return False
 
     def toggle_write(self):
