@@ -3,9 +3,9 @@ from arduino import Arduino
 
 class Request:
 
-    STP = 0
-    STR = 1
-    ROT = 2
+    STP = 1
+    STR = 2
+    ROT = 3
     GET_MODE = 10
     GET_DIST = 11
     GET_BATT = 12

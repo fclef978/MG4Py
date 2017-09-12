@@ -1,6 +1,9 @@
-from io import IO
+#!/usr/bin/python3
+
+from gpio import IO
 from uss import Uss
 from request import Request
+from time import sleep
 
 if __name__ == '__main__':
     req = Request()
@@ -13,13 +16,17 @@ if __name__ == '__main__':
     io = {}
     io_list = {'front': IO.FRONT, 'left': IO.LEFT, 'right': IO.RIGHT}
     for key, val in io_list.items():
-        io[key] = Uss(val)
+        io[key] = IO(val, IO.OUT)
 
     print('press enter to start\n')
     input('>>>  ')
 
     while True:
-        req.set([Request.STR, 50, 100])
+        import pdb; pdb.set_trace()
+        req.set([1, 50, 100])
+        sleep(1)
+        print(req.get(10))
+        sleep(1)
         break
 
     print('End')

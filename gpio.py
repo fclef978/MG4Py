@@ -1,4 +1,4 @@
-import RPi.GPIO as GPIO
+from RPi import GPIO
 import time
 
 
@@ -13,7 +13,7 @@ class IO:
     def __init__(self, port, io):
         self.port = port
         self.io = io
-        GPIO.setmode(GPIO.BOARD)
+        GPIO.setmode(GPIO.BCM)
         if self.io == IO.IN:
             GPIO.setup(self.port, self.io, pull_up_down=GPIO.PUD_UP)
         elif self.io == IO.OUT:

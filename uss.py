@@ -27,7 +27,7 @@ class Uss:
         if not self.i2c.read_byte_data(self.addr, 0) == 0x06:
             raise UssOpenError(self.addr)
         else:
-            print("USS opened in %{0}".format(self.addr))
+            print("USS opened in {0}".format(self.addr))
 
     def get(self):
         self.i2c.write_byte_data(self.addr, 0x00, 0x51)

@@ -7,13 +7,29 @@ import serial
 from time import sleep
 
 
+class ArduinoOpenError(Exception):
+    
+    def __str__(self):
+        return ('Arduino Open Failed')
+
+
 class Arduino:
 
     def __init__(self):
-        self.ser = serial.Serial('/dev/ttyACM0', 9600)
+        try:
+            self.ser = serial.Serial('/dev/ttyACM0', 115200)
+            self.port = '/dev/ttyACM0'
+        except:
+            self.ser = serial.Serial('/dev/ttyACM1', 115200)
+            self.port = '/dev/ttyACM1'
+        finally:
+            pass
         self.flush()
+        print("Arduino Opened {0}".format(self.port))
 
     def __del__(self):
+        cmd = [99, 0, 0]
+        self.send(cmd)
         self.ser.close()
 
     def flush(self):
@@ -22,7 +38,8 @@ class Arduino:
     def send(self, cmd_data):
         ser_data = self.encode(cmd_data)
         for i in range(7):
-            self.ser.write(ser_data[i])
+            self.ser.write(ser_data[i].to_bytes(1, byteorder='big'))
+        print(ser_data)
 
     def receive(self):
         cnt = 0
@@ -30,42 +47,39 @@ class Arduino:
         # 50ループ(だいたい50ミリ秒)でタイムアウト
         for i in range(50):
             if self.ser.in_waiting >= 7:
-                ser_data[0] = self.ser.read()
-                if ser_data[0] >= 0x80:
+                ser_data[0] = self.read()
+                if ser_data[0] >= 0x80: # 0x80 = 128
                     for i in range(1, 7):
-                        ser_data[i] = self.ser.read()
-                        cmd_data = self.decode(ser_data)
-                        return cmd_data
+                        ser_data[i] = self.read()
+                    cmd_data = self.decode(ser_data)
+                    return cmd_data
             sleep(0.001)
 
         return False
+        
+    def read(self):
+        result = int.from_bytes(self.ser.read(), 'little')
+        return result 
 
     @staticmethod
     def encode(cmd_data):
         mid_data = [0] * 6
         ser_data = [0] * 7
-        for i in range(3):
-            mid_data[2 * i] = (cmd_data[i] >> 8) & 0xff
-            mid_data[2 * i + 1] = cmd_data[i] & 0xff
+        
+        mid_data[0] = (cmd_data[0] >> 8) & 0x00ff
+        mid_data[1] = cmd_data[0] & 0x00ff
+        mid_data[2] = (cmd_data[1] >> 8) & 0x00ff
+        mid_data[3] = cmd_data[1] & 0x00ff
+        mid_data[4] = (cmd_data[2] >> 8) & 0x00ff
+        mid_data[5] = cmd_data[2] & 0x00ff
 
-        for i in range(7):
-            upper_bit = 0x40
-            lower_bit = 0x7f
-            data1 = 0xff
-            data2 = 0x00
-            for j in range(i):
-                if not j == 0:
-                    upper_bit >>= 1
-                    upper_bit |= 0x80
-                lower_bit >>= 1
-                lower_bit &= 0x7f
-            if i == 0:
-                upper_bit = 0x08
-            else:
-                data1 = mid_data[i - 1] << (7 - i)
-            if not i == 6:
-                data2 = mid_data[i] >> (i + 1)
-            ser_data[i] = (data1 & upper_bit) | (data2 & lower_bit)
+        ser_data[0] = 0x80 | ((mid_data[0] >> 1) & 0x7f)
+        ser_data[1] = ((mid_data[0] << 6) & 0x40) | ((mid_data[1] >> 2) & 0x3f)
+        ser_data[2] = ((mid_data[1] << 5) & 0x60) | ((mid_data[2] >> 3) & 0x1f)
+        ser_data[3] = ((mid_data[2] << 4) & 0x70) | ((mid_data[3] >> 4) & 0x0f)
+        ser_data[4] = ((mid_data[3] << 3) & 0x78) | ((mid_data[4] >> 5) & 0x07)
+        ser_data[5] = ((mid_data[4] << 2) & 0x7c) | ((mid_data[5] >> 6) & 0x03)
+        ser_data[6] = ((mid_data[5] << 1) & 0x7e)
 
         return ser_data
 
@@ -74,19 +88,15 @@ class Arduino:
         mid_data = [0] * 6
         cmd_data = [0] * 3
 
-        for i in range(6):
-            upper_bit = 0xfe
-            lower_bit = 0x01
-            data1 = ser_data[i] << (i + 1)
-            data2 = ser_data[i + 1] >> (6 - i)
-            for j in range(i):
-                upper_bit <<= 1
-                upper_bit &= 0xf7
-                lower_bit <<= 1
-                lower_bit |= 0x01
-            mid_data[i] = (data1 & upper_bit) | (data2 & lower_bit)
+        mid_data[0] = ((ser_data[0] << 1) & 0xfe) | ((ser_data[1] >> 6) & 0x01)
+        mid_data[1] = ((ser_data[1] << 2) & 0xfc) | ((ser_data[2] >> 5) & 0x03)
+        mid_data[2] = ((ser_data[2] << 3) & 0xf8) | ((ser_data[3] >> 4) & 0x07)
+        mid_data[3] = ((ser_data[3] << 4) & 0xf0) | ((ser_data[4] >> 3) & 0x0f)
+        mid_data[4] = ((ser_data[4] << 5) & 0xe0) | ((ser_data[5] >> 2) & 0x1f)
+        mid_data[5] = ((ser_data[5] << 6) & 0xc0) | ((ser_data[6] >> 1) & 0x3f)
 
-        for i in range(3):
-            cmd_data[i] = (mid_data[2 * i] << 8) | mid_data[2 * i + 1]
+        cmd_data[0] = (mid_data[0] << 8) | mid_data[1]
+        cmd_data[1] = (mid_data[2] << 8) | mid_data[3]
+        cmd_data[2] = (mid_data[4] << 8) | mid_data[5]
 
         return cmd_data
