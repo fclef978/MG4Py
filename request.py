@@ -3,12 +3,12 @@ from arduino import Arduino
 
 class Request:
 
-    STP = 1
-    STR = 2
-    ROT = 3
-    GET_MODE = 10
-    GET_DIST = 11
-    GET_BATT = 12
+    STP = 'a'
+    STR = 'b'
+    ROT = 'c'
+    GET_MODE = 'e'
+    GET_DIST = 'f'
+    GET_BATT = 'g'
 
     def __init__(self):
         self.arduino = Arduino()
@@ -25,10 +25,10 @@ class Request:
         cmd_data = self.get(Request.GET_DIST)
         if cmd_data is False:
             return False
-        return cmd_data[0], cmd_data[1]  # Left, Rightの順番
+        return cmd_data[1], cmd_data[2]  # Left, Rightの順番
 
     def get_batt(self):
         cmd_data = self.get(Request.GET_BATT)
         if cmd_data is False:
             return False
-        return cmd_data[0] / 100.0
+        return cmd_data[1] / 100.0

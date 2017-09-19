@@ -22,11 +22,9 @@ if __name__ == '__main__':
     input('>>>  ')
 
     while True:
-        import pdb; pdb.set_trace()
-        req.set([1, 50, 100])
-        sleep(1)
-        print(req.get(10))
-        sleep(1)
+        # import pdb; pdb.set_trace()
+        req.set(['b', 30, 100])
+        sleep(3)
         break
 
     print('End')
